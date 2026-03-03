@@ -1,0 +1,54 @@
+version: 2
+
+builds:
+  - main: ./cmd/goenv
+    binary: goenv
+    ldflags:
+      - -s -w -X github.com/alexrios/goenv/internal/cli.AppVersion={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+      - '^ci:'
+      - '^style:'
+
+homebrew_casks:
+  - name: goenv
+    binaries:
+      - goenv
+    homepage: "https://github.com/alexrios/goenv"
+    description: "TUI for viewing and editing Go environment variables"
+    directory: Casks
+    repository:
+      owner: alexrios
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.GH_PAT }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Update {{ .ProjectName }} to {{ .Tag }}"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/goenv"]
+          end

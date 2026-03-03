@@ -1,0 +1,42 @@
+[tools]
+go = "1.26"
+
+[env]
+_.path = ["./bin"]
+
+[tasks.build]
+description = "Build the goenv binary"
+run = """
+VERSION="${GOENV_VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}"
+go build -ldflags "-X github.com/alexrios/goenv/internal/cli.AppVersion=${VERSION}" -o bin/goenv ./cmd/goenv
+"""
+
+[tasks.debug]
+description = "Run goenv with debug logging"
+run = """
+VERSION="${GOENV_VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}"
+DEBUG=1 go run -ldflags "-X github.com/alexrios/goenv/internal/cli.AppVersion=${VERSION}" ./cmd/goenv
+"""
+
+[tasks.logs]
+description = "Tail the debug log file"
+run = "tail -f messages.log"
+
+[tasks.test]
+description = "Run all tests"
+run = "go test ./..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.gifs]
+description = "Record all VHS demo GIFs"
+depends = ["build"]
+run = """
+mkdir -p docs/gifs
+for tape in vhs/*.tape; do
+  echo "Recording ${tape}..."
+  vhs "${tape}"
+done
+"""

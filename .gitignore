@@ -1,0 +1,23 @@
+# Build artifacts
+/goenv
+/goenv_test
+bin/
+dist/
+
+# Test artifacts
+coverage.out
+
+# Debug logs
+messages.log
+
+# IDE
+.idea
+
+# AI stuff that people use
+.claude/
+.cursorrules
+.cursor/
+.aider*
+.copilot/
+CLAUDE.md
+AGENTS.md
