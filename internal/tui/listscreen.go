@@ -104,6 +104,9 @@ func (m *ListScreenModel) Update(msg tea.Msg) tea.Cmd {
 		switch msg.String() {
 		case "enter":
 			if selectedItem, ok := m.list.SelectedItem().(envItem); ok {
+				if selectedItem.ReadOnly {
+					return sendMsg(showDetailMsg(selectedItem.EnvVar))
+				}
 				return sendMsg(startEditMsg(selectedItem.EnvVar))
 			}
 		case "s":
@@ -144,9 +147,9 @@ func (m *ListScreenModel) Update(msg tea.Msg) tea.Cmd {
 			// Show stats (Shift+S)
 			return sendMsg(showStatsMsg{})
 		case "u":
-			// Reset current variable to default
+			// Reset current variable to default (not available for read-only vars)
 			if selectedItem, ok := m.list.SelectedItem().(envItem); ok {
-				if selectedItem.Changed {
+				if !selectedItem.ReadOnly && selectedItem.Changed {
 					return sendMsg(resetEnvMsg{Key: selectedItem.Key})
 				}
 			}

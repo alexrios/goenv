@@ -38,7 +38,7 @@ func (m HelpScreenModel) View() string {
 	content += helpKeyStyle.Render("Ctrl+U") + helpDescStyle.Render("Half-page up") + "\n"
 	content += helpKeyStyle.Render("g/G") + helpDescStyle.Render("Go to top/bottom") + "\n"
 	content += helpKeyStyle.Render("/") + helpDescStyle.Render("Search/filter variables") + "\n"
-	content += helpKeyStyle.Render("Enter") + helpDescStyle.Render("Edit selected variable") + "\n"
+	content += helpKeyStyle.Render("Enter") + helpDescStyle.Render("Edit variable (view details if [RO])") + "\n"
 	content += helpKeyStyle.Render("q") + helpDescStyle.Render("Quit") + "\n"
 
 	content += "\n" + helpSectionStyle.Render("Actions") + "\n"
@@ -72,6 +72,10 @@ func (m HelpScreenModel) View() string {
 	content += helpKeyStyle.Render("Ctrl+R") + helpDescStyle.Render("Reset to original value") + "\n"
 	content += helpKeyStyle.Render("Tab") + helpDescStyle.Render("Next suggestion") + "\n"
 	content += helpKeyStyle.Render("Shift+Tab") + helpDescStyle.Render("Previous suggestion") + "\n"
+
+	content += "\n" + helpSectionStyle.Render("Read-Only Variables") + "\n"
+	content += helpDescStyle.Render("Variables marked [RO] are computed by Go and cannot") + "\n"
+	content += helpDescStyle.Render("be changed. Press Enter to view details, y/Y to copy.") + "\n"
 
 	content += "\n" + helpFooterStyle.Render(helpScreenFooter)
 

@@ -92,6 +92,9 @@ type changeScreenMsg AppScreen
 // startEditMsg is sent from a screen model to initiate editing a specific variable.
 type startEditMsg goenv.EnvVar
 
+// showDetailMsg is sent to view a read-only variable's details without editing.
+type showDetailMsg goenv.EnvVar
+
 // toggleSortMsg requests toggling the sort mode.
 type toggleSortMsg struct{}
 

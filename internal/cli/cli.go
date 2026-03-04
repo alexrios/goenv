@@ -185,6 +185,10 @@ func runCLISet(opts Options) bool {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+		if goenv.IsReadOnly(key) {
+			fmt.Fprintf(os.Stderr, "Error: %s is read-only and cannot be set\n", key)
+			os.Exit(1)
+		}
 		if valErr := goenv.ValidateEnvValue(key, value); valErr != nil {
 			fmt.Fprintf(os.Stderr, "Warning: %s\n", valErr.Message)
 		}

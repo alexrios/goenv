@@ -75,6 +75,7 @@ var (
 var (
 	favoriteStarStyle  lipgloss.Style
 	categoryLabelStyle lipgloss.Style
+	readOnlyLabelStyle lipgloss.Style
 )
 
 var inlineDescStyle lipgloss.Style
@@ -213,6 +214,10 @@ func regenerateStyles() {
 		Foreground(activeTheme.CategoryLabel).
 		Italic(true)
 
+	readOnlyLabelStyle = lipgloss.NewStyle().
+		Foreground(colorDim).
+		Italic(true)
+
 	// Inline description style (shown under selected item)
 	inlineDescStyle = lipgloss.NewStyle().
 		Foreground(colorAccent).
@@ -235,6 +240,7 @@ const (
 	inputPrompt      = "> "
 	inputPlaceholder = "Enter new value..."
 	editHelpText     = "(Enter: save, Esc: cancel, Ctrl+R: reset)"
+	readOnlyHelpText = "(y: copy value, Y: copy KEY=VALUE, Esc: back)"
 	listHelpText     = "Press Enter to edit, 'q' or Ctrl+C to quit"
 	helpScreenTitle  = "GO ENV - Keyboard Shortcuts"
 	helpScreenFooter = "Press Esc, q, or ? to return..."
@@ -249,4 +255,5 @@ const (
 	IconReload   = "\u21BB"
 	IconFavorite = "\u2605"
 	IconWatch    = "\u2299"
+	IconReadOnly = "\U0001F512"
 )

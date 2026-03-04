@@ -12,6 +12,8 @@ import (
 
 // EditScreenModel provides a text input for editing a selected environment variable.
 // It displays the original value and tracks length changes during editing.
+// When readOnly is true, the text input is disabled and the screen shows
+// variable details without allowing modification.
 type EditScreenModel struct {
 	textInput       textinput.Model
 	editingKey      string
@@ -21,6 +23,7 @@ type EditScreenModel struct {
 	showSuggestions bool
 	validationError string // Current validation error message, if any
 	goVersion       goenv.GoVersion
+	readOnly        bool
 }
 
 // NewEditScreenModel creates a new edit screen with default text input configuration.
@@ -67,17 +70,36 @@ func (m *EditScreenModel) updateSuggestions() {
 }
 
 // Init initializes the edit screen by focusing the text input and starting cursor blink.
+// In read-only mode, the text input is not focused and no cursor blink is started.
 func (m *EditScreenModel) Init() tea.Cmd {
-	m.textInput.Focus()
 	m.suggestionIdx = -1
 	m.showSuggestions = true
 	m.validationError = ""
+	if m.readOnly {
+		m.textInput.Blur()
+		return nil
+	}
+	m.textInput.Focus()
 	m.updateSuggestions()
 	return textinput.Blink
 }
 
 // Update handles messages for the edit screen, including Enter to save and Esc to cancel.
+// In read-only mode, only Esc (back) and copy keys (y/Y) are handled.
 func (m *EditScreenModel) Update(msg tea.Msg) tea.Cmd {
+	if m.readOnly {
+		if msg, ok := msg.(tea.KeyPressMsg); ok {
+			switch msg.String() {
+			case "esc":
+				return sendMsg(changeScreenMsg(AppScreenList))
+			case "y":
+				return sendMsg(copyValueMsg{Key: m.editingKey, Value: m.originalValue})
+			case "Y":
+				return sendMsg(copyKeyValueMsg{Key: m.editingKey, Value: m.originalValue})
+			}
+		}
+		return nil
+	}
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -161,7 +183,11 @@ func (m *EditScreenModel) Update(msg tea.Msg) tea.Cmd {
 
 // View renders the edit screen with the variable name, visual diff,
 // text input, suggestions, length information, and keyboard hints.
+// In read-only mode, it shows the value as plain text with description and docs.
 func (m EditScreenModel) View() string {
+	if m.readOnly {
+		return m.readOnlyView()
+	}
 	currentValue := m.textInput.Value()
 	currentLen := len(currentValue)
 	originalLen := len(m.originalValue)
@@ -274,6 +300,28 @@ func (m EditScreenModel) renderCSVBreakdown() string {
 		}
 	}
 	return strings.Join(lines, "\n")
+}
+
+// readOnlyView renders the read-only detail view for a variable.
+func (m EditScreenModel) readOnlyView() string {
+	var parts []string
+	parts = append(parts, fmt.Sprintf("%s %s (read-only)", IconReadOnly, m.editingKey))
+
+	parts = append(parts, editOriginalValueStyle.Render(fmt.Sprintf("Value: %s", m.originalValue)))
+
+	if desc := goenv.GetEnvVarDescription(m.editingKey); desc != "" {
+		parts = append(parts, editDocStyle.Render(desc))
+	}
+
+	if doc := goenv.GetExtendedDoc(m.editingKey); doc != "" {
+		parts = append(parts, editDocStyle.Render(doc))
+	}
+
+	parts = append(parts, editLengthInfoStyle.Render(fmt.Sprintf("Length: %d", len(m.originalValue))))
+
+	parts = append(parts, readOnlyHelpText)
+
+	return strings.Join(parts, "\n\n")
 }
 
 // renderDiff creates a visual comparison between original and new values.

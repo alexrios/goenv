@@ -74,8 +74,11 @@ func (d envVarDelegate) Render(w io.Writer, m list.Model, index int, item list.I
 		descStyle = d.Styles.NormalDesc.Width(width)
 	}
 
-	// Render title (variable name) with optional category tag and change indicator
+	// Render title (variable name) with optional category tag, read-only tag, and change indicator
 	title := ei.Title()
+	if ei.ReadOnly {
+		title = readOnlyLabelStyle.Render("[RO]") + " " + title
+	}
 	if tag := d.categoryTag(m, index, ei); tag != "" {
 		title = categoryLabelStyle.Render(tag) + " " + title
 	}

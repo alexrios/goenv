@@ -458,3 +458,35 @@ func TestGetEnvVarCategory_DefaultsToGeneral(t *testing.T) {
 		t.Errorf("unknown var category = %q, want General (default)", cat)
 	}
 }
+
+// --- IsReadOnly Tests ---
+
+func TestIsReadOnly_KnownReadOnlyVars(t *testing.T) {
+	readOnlyVars := []string{
+		"GOVERSION", "GOTOOLDIR", "GOMOD",
+		"GOHOSTOS", "GOHOSTARCH", "GOEXE", "GOGCCFLAGS", "GOENV",
+	}
+	for _, key := range readOnlyVars {
+		if !IsReadOnly(key) {
+			t.Errorf("IsReadOnly(%q) = false, want true", key)
+		}
+	}
+}
+
+func TestIsReadOnly_SettableVars(t *testing.T) {
+	settableVars := []string{
+		"GOPATH", "GOROOT", "GOOS", "GOARCH", "GOPROXY",
+		"CGO_ENABLED", "GOBIN", "GO111MODULE", "GOWORK",
+	}
+	for _, key := range settableVars {
+		if IsReadOnly(key) {
+			t.Errorf("IsReadOnly(%q) = true, want false", key)
+		}
+	}
+}
+
+func TestIsReadOnly_UnknownVar(t *testing.T) {
+	if IsReadOnly("NONEXISTENT_VAR") {
+		t.Error("IsReadOnly(unknown) = true, want false")
+	}
+}

@@ -313,6 +313,8 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newModel, cmd = m.handleChangeScreen(msg)
 	case startEditMsg:
 		newModel, cmd = m.handleStartEdit(msg)
+	case showDetailMsg:
+		newModel, cmd = m.handleShowDetail(msg)
 	case saveEnvRequestMsg:
 		newModel, cmd = m.handleSaveEnvRequest(msg)
 	case envSetSuccessMsg:
