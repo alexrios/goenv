@@ -221,3 +221,105 @@ func TestEditScreen_View_ContainsEditingKey(t *testing.T) {
 		t.Error("view should contain the editing key name")
 	}
 }
+
+// --- Read-Only Mode Tests ---
+
+func TestEditScreen_ReadOnly_InitDoesNotFocus(t *testing.T) {
+	m := NewEditScreenModel(goenv.GoVersion{Major: 1, Minor: 21, Patch: 0})
+	m.editingKey = "GOVERSION"
+	m.originalValue = "go1.21.0"
+	m.readOnly = true
+	cmd := m.Init()
+
+	if cmd != nil {
+		t.Error("read-only Init should return nil (no blink)")
+	}
+}
+
+func TestEditScreen_ReadOnly_EscReturnsToList(t *testing.T) {
+	m := NewEditScreenModel(goenv.GoVersion{Major: 1, Minor: 21, Patch: 0})
+	m.editingKey = "GOVERSION"
+	m.originalValue = "go1.21.0"
+	m.readOnly = true
+	m.Init()
+
+	cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	if cmd == nil {
+		t.Fatal("expected command from Esc in read-only mode")
+	}
+	msg := cmd()
+	if csm, ok := msg.(changeScreenMsg); !ok || AppScreen(csm) != AppScreenList {
+		t.Errorf("expected changeScreenMsg(AppScreenList), got %T", msg)
+	}
+}
+
+func TestEditScreen_ReadOnly_IgnoresEnterAndTyping(t *testing.T) {
+	m := NewEditScreenModel(goenv.GoVersion{Major: 1, Minor: 21, Patch: 0})
+	m.editingKey = "GOVERSION"
+	m.originalValue = "go1.21.0"
+	m.readOnly = true
+	m.Init()
+
+	cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if cmd != nil {
+		t.Error("read-only mode should ignore Enter key")
+	}
+
+	cmd = m.Update(tea.KeyPressMsg{Code: 'a'})
+	if cmd != nil {
+		t.Error("read-only mode should ignore character input")
+	}
+}
+
+func TestEditScreen_ReadOnly_CopyValueKey(t *testing.T) {
+	m := NewEditScreenModel(goenv.GoVersion{Major: 1, Minor: 21, Patch: 0})
+	m.editingKey = "GOVERSION"
+	m.originalValue = "go1.21.0"
+	m.readOnly = true
+	m.Init()
+
+	cmd := m.Update(tea.KeyPressMsg{Code: 'y'})
+	if cmd == nil {
+		t.Fatal("expected command from y in read-only mode")
+	}
+	msg := cmd()
+	if cvm, ok := msg.(copyValueMsg); !ok || cvm.Key != "GOVERSION" {
+		t.Errorf("expected copyValueMsg for GOVERSION, got %T", msg)
+	}
+}
+
+func TestEditScreen_ReadOnly_CopyKeyValueKey(t *testing.T) {
+	m := NewEditScreenModel(goenv.GoVersion{Major: 1, Minor: 21, Patch: 0})
+	m.editingKey = "GOVERSION"
+	m.originalValue = "go1.21.0"
+	m.readOnly = true
+	m.Init()
+
+	cmd := m.Update(tea.KeyPressMsg{Code: 'Y'})
+	if cmd == nil {
+		t.Fatal("expected command from Y in read-only mode")
+	}
+	msg := cmd()
+	if ckvm, ok := msg.(copyKeyValueMsg); !ok || ckvm.Key != "GOVERSION" {
+		t.Errorf("expected copyKeyValueMsg for GOVERSION, got %T", msg)
+	}
+}
+
+func TestEditScreen_ReadOnly_ViewShowsReadOnlyLabel(t *testing.T) {
+	m := NewEditScreenModel(goenv.GoVersion{Major: 1, Minor: 21, Patch: 0})
+	m.editingKey = "GOVERSION"
+	m.originalValue = "go1.21.0"
+	m.readOnly = true
+	m.Init()
+
+	view := m.View()
+	if !strings.Contains(view, "read-only") {
+		t.Error("read-only view should contain 'read-only' label")
+	}
+	if !strings.Contains(view, "GOVERSION") {
+		t.Error("read-only view should contain the variable name")
+	}
+	if !strings.Contains(view, "go1.21.0") {
+		t.Error("read-only view should contain the value")
+	}
+}

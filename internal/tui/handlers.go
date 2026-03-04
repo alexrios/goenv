@@ -100,6 +100,20 @@ func (m mainModel) handleStartEdit(msg startEditMsg) (mainModel, tea.Cmd) {
 	m.editScreen.editingKey = itemToEdit.Key
 	m.editScreen.originalValue = itemToEdit.Value
 	m.editScreen.textInput.SetValue(itemToEdit.Value)
+	m.editScreen.readOnly = false
+	m.currentScreen = AppScreenEdit
+	m.clearTempMessages()
+	m.calculateScreenSizes()
+	return m, m.editScreen.Init()
+}
+
+// handleShowDetail handles transitioning to the read-only detail view for a variable.
+func (m mainModel) handleShowDetail(msg showDetailMsg) (mainModel, tea.Cmd) {
+	ev := goenv.EnvVar(msg)
+	m.editScreen.editingKey = ev.Key
+	m.editScreen.originalValue = ev.Value
+	m.editScreen.textInput.SetValue(ev.Value)
+	m.editScreen.readOnly = true
 	m.currentScreen = AppScreenEdit
 	m.clearTempMessages()
 	m.calculateScreenSizes()
@@ -549,6 +563,9 @@ func (m mainModel) handleShowCommandPalette() (mainModel, tea.Cmd) {
 func (m mainModel) handleCommandPaletteEdit() (mainModel, tea.Cmd) {
 	m.currentScreen = AppScreenList
 	if ei, ok := m.selectedEnvItem(); ok {
+		if ei.ReadOnly {
+			return m, sendMsg(showDetailMsg(ei.EnvVar))
+		}
 		return m, sendMsg(startEditMsg(ei.EnvVar))
 	}
 	return m, m.refreshListScreen()
@@ -584,7 +601,7 @@ func (m mainModel) handleCommandPaletteFavorite() (mainModel, tea.Cmd) {
 // handleCommandPaletteReset handles the "reset" command from the palette.
 func (m mainModel) handleCommandPaletteReset() (mainModel, tea.Cmd) {
 	m.currentScreen = AppScreenList
-	if ei, ok := m.selectedEnvItem(); ok && ei.Changed {
+	if ei, ok := m.selectedEnvItem(); ok && !ei.ReadOnly && ei.Changed {
 		return m, sendMsg(resetEnvMsg{Key: ei.Key})
 	}
 	return m, m.refreshListScreen()

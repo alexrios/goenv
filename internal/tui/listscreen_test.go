@@ -130,3 +130,40 @@ func TestListScreen_InitReturnsNil(t *testing.T) {
 		t.Error("Init should return nil")
 	}
 }
+
+func TestListScreen_EnterOnReadOnlySendsShowDetailMsg(t *testing.T) {
+	items := []list.Item{
+		envItem{goenv.EnvVar{Key: "GOVERSION", Value: "go1.21.0", ReadOnly: true}},
+		envItem{goenv.EnvVar{Key: "GOPATH", Value: "/go"}},
+	}
+	m := NewListScreenModelWithSortMode(items, "go1.21.0", goenv.GoVersion{Major: 1, Minor: 21, Patch: 0}, persist.SortAlpha, nil)
+	m.list.SetSize(80, 24)
+	m.list.Select(0)
+
+	cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected command from Enter key on read-only item")
+	}
+	msg := cmd()
+	if _, ok := msg.(showDetailMsg); !ok {
+		t.Errorf("expected showDetailMsg for read-only item, got %T", msg)
+	}
+}
+
+func TestListScreen_EnterOnSettableSendsStartEditMsg(t *testing.T) {
+	items := []list.Item{
+		envItem{goenv.EnvVar{Key: "GOPATH", Value: "/go", ReadOnly: false}},
+	}
+	m := NewListScreenModelWithSortMode(items, "go1.21.0", goenv.GoVersion{Major: 1, Minor: 21, Patch: 0}, persist.SortAlpha, nil)
+	m.list.SetSize(80, 24)
+	m.list.Select(0)
+
+	cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected command from Enter key on settable item")
+	}
+	msg := cmd()
+	if _, ok := msg.(startEditMsg); !ok {
+		t.Errorf("expected startEditMsg for settable item, got %T", msg)
+	}
+}

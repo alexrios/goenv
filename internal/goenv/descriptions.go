@@ -51,6 +51,26 @@ func NextCategory(current Category) Category {
 	return "" // unknown category, reset to All
 }
 
+// readOnlyVariables lists environment variables that are computed by Go and
+// cannot be set with 'go env -w'.
+var readOnlyVariables = map[string]struct{}{
+	"GOVERSION":  {},
+	"GOTOOLDIR":  {},
+	"GOMOD":      {},
+	"GOHOSTOS":   {},
+	"GOHOSTARCH": {},
+	"GOEXE":      {},
+	"GOGCCFLAGS": {},
+	"GOENV":      {}, // path to config file; cannot be changed via go env -w
+}
+
+// IsReadOnly returns true if the given environment variable is computed by Go
+// and cannot be set with 'go env -w'.
+func IsReadOnly(key string) bool {
+	_, ok := readOnlyVariables[key]
+	return ok
+}
+
 // envVarCategories maps environment variable names to their categories.
 var envVarCategories = map[string]Category{
 	// General

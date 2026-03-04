@@ -6,4 +6,5 @@ type EnvVar struct {
 	Value    string
 	Changed  bool
 	Favorite bool
+	ReadOnly bool
 }

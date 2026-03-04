@@ -127,10 +127,14 @@ func performExportCmd(name, description string, items []goenv.EnvVar) tea.Cmd {
 }
 
 // performImportApplyCmd creates a command that applies imported variables.
+// Read-only variables are silently skipped.
 func performImportApplyCmd(variables []goenv.EnvVar) tea.Cmd {
 	return func() tea.Msg {
 		var successCount, failedCount int
 		for _, ev := range variables {
+			if goenv.IsReadOnly(ev.Key) {
+				continue
+			}
 			if err := commands.SetEnvVar(ev); err != nil {
 				failedCount++
 			} else {

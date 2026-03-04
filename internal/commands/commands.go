@@ -97,9 +97,10 @@ func ReloadEnv() ([]goenv.EnvVar, error) {
 		if v != "" {
 			_, changed := changedVars[k]
 			items = append(items, goenv.EnvVar{
-				Key:     k,
-				Value:   v,
-				Changed: changed,
+				Key:      k,
+				Value:    v,
+				Changed:  changed,
+				ReadOnly: goenv.IsReadOnly(k),
 			})
 		}
 	}
