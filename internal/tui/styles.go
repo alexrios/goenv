@@ -118,7 +118,7 @@ func regenerateStyles() {
 
 	errorMessageStyle = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#FAFAFA")).
+		Foreground(activeTheme.StatusKeyFg).
 		Background(colorError).
 		Padding(0, 1).
 		MarginTop(1).

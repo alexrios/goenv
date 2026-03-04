@@ -26,6 +26,13 @@ func TestGetTheme_Dracula(t *testing.T) {
 	}
 }
 
+func TestGetTheme_Light(t *testing.T) {
+	theme := GetTheme(ThemeLight)
+	if theme.Name != ThemeLight {
+		t.Errorf("GetTheme(%q).Name = %q, want %q", ThemeLight, theme.Name, ThemeLight)
+	}
+}
+
 func TestGetTheme_UnknownFallsBackToDefault(t *testing.T) {
 	theme := GetTheme("nonexistent")
 	if theme.Name != ThemeDefault {
@@ -34,7 +41,7 @@ func TestGetTheme_UnknownFallsBackToDefault(t *testing.T) {
 }
 
 func TestNextTheme_FullCycle(t *testing.T) {
-	// default -> nord -> dracula -> default
+	// default -> nord -> dracula -> light -> default
 	got := NextTheme(ThemeDefault)
 	if got != ThemeNord {
 		t.Errorf("NextTheme(default) = %q, want %q", got, ThemeNord)
@@ -44,8 +51,12 @@ func TestNextTheme_FullCycle(t *testing.T) {
 		t.Errorf("NextTheme(nord) = %q, want %q", got, ThemeDracula)
 	}
 	got = NextTheme(ThemeDracula)
+	if got != ThemeLight {
+		t.Errorf("NextTheme(dracula) = %q, want %q", got, ThemeLight)
+	}
+	got = NextTheme(ThemeLight)
 	if got != ThemeDefault {
-		t.Errorf("NextTheme(dracula) = %q, want %q", got, ThemeDefault)
+		t.Errorf("NextTheme(light) = %q, want %q", got, ThemeDefault)
 	}
 }
 
@@ -58,10 +69,10 @@ func TestNextTheme_UnknownReturnsDefault(t *testing.T) {
 
 func TestAvailableThemes_ContainsAllThemes(t *testing.T) {
 	themes := AvailableThemes()
-	if len(themes) != 3 {
-		t.Fatalf("AvailableThemes() returned %d themes, want 3", len(themes))
+	if len(themes) != 4 {
+		t.Fatalf("AvailableThemes() returned %d themes, want 4", len(themes))
 	}
-	for _, name := range []string{ThemeDefault, ThemeNord, ThemeDracula} {
+	for _, name := range []string{ThemeDefault, ThemeNord, ThemeDracula, ThemeLight} {
 		if !slices.Contains(themes, name) {
 			t.Errorf("AvailableThemes() missing %q", name)
 		}
