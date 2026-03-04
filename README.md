@@ -25,7 +25,7 @@ A terminal UI (TUI) application for viewing and editing Go environment variables
 - View statistics about your environment configuration
 - Command palette (`:`) for fuzzy command search
 - Watch mode with auto-reload and change highlighting
-- Three built-in color themes: default, nord, dracula
+- Four built-in color themes: default, nord, dracula, light
 - Copy values to clipboard via OSC52 (works over SSH)
 - CLI mode for scripting and automation
 - Quit confirmation when session has unsaved edits
@@ -228,7 +228,7 @@ goenv stores its configuration in `~/.config/goenv/config.json`:
 | Option | Values | Description |
 |--------|--------|-------------|
 | `sortMode` | `alpha`, `modified_first`, `category` | How to sort variables in the list |
-| `theme` | `default`, `nord`, `dracula` | Color theme |
+| `theme` | `default`, `nord`, `dracula`, `light` | Color theme |
 | `favorites` | array of strings | Variable names pinned to top |
 | `watchInterval` | integer (seconds) | Watch mode reload interval (default: 5, range: 1-86400) |
 | `maxHistory` | integer | Maximum undo/redo history entries (default: 50) |
@@ -257,7 +257,7 @@ Manage presets with `p`.
 
 ## Themes
 
-goenv includes three color themes:
+goenv includes four color themes:
 
 ### Default
 The built-in theme with purple/pink accents, suitable for most terminals.
@@ -267,6 +267,11 @@ Inspired by the [Nord](https://www.nordtheme.com/) color palette. Cool, blue-tin
 
 ### Dracula
 Inspired by the [Dracula](https://draculatheme.com/) theme. Rich purples and pinks on a dark background.
+
+### Light
+Designed for light terminal backgrounds. Uses high-contrast colors (blue, violet, gray tones) that remain readable on white or light-colored terminals.
+
+![Light Theme demo](docs/gifs/light-theme.gif)
 
 To change themes, press `t` to cycle through them or edit `~/.config/goenv/config.json`:
 

@@ -32,6 +32,7 @@ const (
 	ThemeDefault = "default"
 	ThemeNord    = "nord"
 	ThemeDracula = "dracula"
+	ThemeLight   = "light"
 )
 
 // DefaultTheme returns the default color theme.
@@ -97,6 +98,27 @@ func DraculaTheme() Theme {
 	}
 }
 
+// LightTheme returns a theme designed for light terminal backgrounds.
+func LightTheme() Theme {
+	return Theme{
+		Name:          ThemeLight,
+		Primary:       lipgloss.Color("#2563EB"), // Blue-600
+		Accent:        lipgloss.Color("#7C3AED"), // Violet-600
+		Dim:           lipgloss.Color("#6B7280"), // Gray-500
+		Success:       lipgloss.Color("#16A34A"), // Green-600
+		Warning:       lipgloss.Color("#D97706"), // Amber-600
+		Error:         lipgloss.Color("#DC2626"), // Red-600
+		StatusBg:      lipgloss.Color("#E5E7EB"), // Gray-200
+		StatusFg:      lipgloss.Color("#1F2937"), // Gray-800
+		StatusKeyBg:   lipgloss.Color("#2563EB"), // Blue-600
+		StatusKeyFg:   lipgloss.Color("#FFFFFF"), // White
+		HelpKey:       lipgloss.Color("#0891B2"), // Cyan-600
+		HelpDesc:      lipgloss.Color("#374151"), // Gray-700
+		FavoriteStar:  lipgloss.Color("#D97706"), // Amber-600
+		CategoryLabel: lipgloss.Color("#4F46E5"), // Indigo-600
+	}
+}
+
 // GetTheme returns a theme by name. Falls back to default if not found.
 func GetTheme(name string) Theme {
 	switch name {
@@ -104,6 +126,8 @@ func GetTheme(name string) Theme {
 		return NordTheme()
 	case ThemeDracula:
 		return DraculaTheme()
+	case ThemeLight:
+		return LightTheme()
 	default:
 		return DefaultTheme()
 	}
@@ -111,7 +135,7 @@ func GetTheme(name string) Theme {
 
 // AvailableThemes returns a list of available theme names.
 func AvailableThemes() []string {
-	return []string{ThemeDefault, ThemeNord, ThemeDracula}
+	return []string{ThemeDefault, ThemeNord, ThemeDracula, ThemeLight}
 }
 
 // NextTheme returns the next theme name in the cycle.
@@ -122,6 +146,8 @@ func NextTheme(current string) string {
 	case ThemeNord:
 		return ThemeDracula
 	case ThemeDracula:
+		return ThemeLight
+	case ThemeLight:
 		return ThemeDefault
 	default:
 		return ThemeDefault
