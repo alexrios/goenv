@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>goenv — Terminal UI for Go Environment Variables</title>
+  <meta name="description" content="Browse, edit, and manage your Go environment variables from a beautiful terminal UI.">
+  <meta property="og:title" content="goenv — Terminal UI for Go Environment Variables">
+  <meta property="og:description" content="Browse, edit, and manage your Go environment variables from a beautiful terminal UI.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://github.com/alexrios/goenv">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #1a1b26;
+      color: #F8F8F2;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0;
+      border-bottom: 1px solid #6272A4;
+    }
+
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: #BD93F9;
+      text-decoration: none;
+    }
+
+    .nav-github {
+      color: #6272A4;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+
+    .nav-github:hover {
+      color: #8BE9FD;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 80px 0 64px;
+      text-align: center;
+    }
+
+    .hero-title {
+      font-size: 64px;
+      font-weight: 700;
+      color: #BD93F9;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+
+    .cursor {
+      display: inline-block;
+      color: #F8F8F2;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .hero-tagline {
+      font-size: 18px;
+      color: #6272A4;
+      margin-bottom: 40px;
+    }
+
+    .hero-tagline span {
+      color: #50FA7B;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #282A36;
+      border: 1px solid #6272A4;
+      padding: 14px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: #F8F8F2;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      margin-bottom: 56px;
+    }
+
+    .hero-cta:hover {
+      border-color: #BD93F9;
+    }
+
+    .hero-cta .prompt {
+      color: #50FA7B;
+    }
+
+    .hero-cta .copy-icon {
+      color: #6272A4;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .hero-cta:hover .copy-icon {
+      color: #F8F8F2;
+    }
+
+    .hero-cta .copied-feedback {
+      color: #50FA7B;
+      font-size: 12px;
+      display: none;
+    }
+
+    /* ── Terminal Window Chrome ── */
+    .terminal-window {
+      background: #282A36;
+      border: 1px solid #6272A4;
+      overflow: hidden;
+    }
+
+    .terminal-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #282A36;
+      border-bottom: 1px solid #6272A4;
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #FF5555; }
+    .terminal-dot.yellow { background: #F1FA8C; }
+    .terminal-dot.green { background: #50FA7B; }
+
+    .terminal-window img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .hero-gif {
+      max-width: 100%;
+    }
+
+    /* ── Section Headers ── */
+    .section-header {
+      font-size: 24px;
+      font-weight: 700;
+      color: #6272A4;
+      margin-bottom: 40px;
+      padding-top: 80px;
+    }
+
+    /* ── Features Grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .feature-card {
+      border: 1px solid #6272A4;
+      background: #1a1b26;
+      overflow: hidden;
+    }
+
+    .feature-card .terminal-window {
+      border: none;
+      border-bottom: 1px solid #6272A4;
+    }
+
+    .feature-info {
+      padding: 20px;
+    }
+
+    .feature-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #BD93F9;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: #F8F8F2;
+      line-height: 1.5;
+      opacity: 0.85;
+    }
+
+    /* ── Install Section ── */
+    .install-section {
+      padding-bottom: 80px;
+    }
+
+    .install-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #6272A4;
+      margin-bottom: 0;
+    }
+
+    .install-tab {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      background: transparent;
+      border: 1px solid #6272A4;
+      border-bottom: none;
+      color: #6272A4;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .install-tab:first-child {
+      border-right: none;
+    }
+
+    .install-tab:last-child {
+      border-left: none;
+    }
+
+    .install-tab.active {
+      color: #F8F8F2;
+      background: #282A36;
+      border-bottom: 1px solid #282A36;
+      margin-bottom: -1px;
+    }
+
+    .install-tab:hover:not(.active) {
+      color: #F8F8F2;
+    }
+
+    .install-panel {
+      display: none;
+      background: #282A36;
+      border: 1px solid #6272A4;
+      border-top: none;
+      padding: 24px;
+    }
+
+    .install-panel.active {
+      display: block;
+    }
+
+    .install-command {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .install-command code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #F8F8F2;
+    }
+
+    .install-command .prompt {
+      color: #50FA7B;
+    }
+
+    .install-command .comment {
+      color: #6272A4;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      color: #6272A4;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 4px 8px;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover {
+      color: #F8F8F2;
+    }
+
+    .copy-btn .copied {
+      color: #50FA7B;
+      display: none;
+    }
+
+    .install-panel a {
+      color: #8BE9FD;
+      text-decoration: none;
+    }
+
+    .install-panel a:hover {
+      text-decoration: underline;
+    }
+
+    .install-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid #6272A4;
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a,
+    .footer-links span {
+      color: #6272A4;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: #8BE9FD;
+    }
+
+    .footer-sep {
+      color: #6272A4;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 48px 0 40px;
+      }
+
+      .hero-title {
+        font-size: 40px;
+      }
+
+      .hero-tagline {
+        font-size: 15px;
+        margin-bottom: 28px;
+      }
+
+      .hero-cta {
+        font-size: 13px;
+        padding: 12px 16px;
+        margin-bottom: 40px;
+      }
+
+      .section-header {
+        font-size: 20px;
+        padding-top: 56px;
+        margin-bottom: 28px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .install-tabs {
+        flex-wrap: wrap;
+      }
+
+      .install-tab {
+        font-size: 12px;
+        padding: 8px 14px;
+      }
+
+      .install-panel {
+        padding: 16px;
+      }
+
+      .install-command code {
+        font-size: 12px;
+      }
+
+      .nav-github {
+        font-size: 11px;
+      }
+
+      .footer-links {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .footer-sep {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ── Nav ── -->
+    <nav>
+      <a href="#" class="nav-logo">goenv</a>
+      <a href="https://github.com/alexrios/goenv" class="nav-github" target="_blank" rel="noopener">$ cd github.com/alexrios/goenv</a>
+    </nav>
+
+    <!-- ── Hero ── -->
+    <section class="hero">
+      <h1 class="hero-title">goenv<span class="cursor">_</span></h1>
+      <p class="hero-tagline"><span>$ </span>your go env, finally under control</p>
+
+      <button class="hero-cta" onclick="copyCommand(this, 'brew install alexrios/tap/goenv')">
+        <code><span class="prompt">$ </span>brew install alexrios/tap/goenv</code>
+        <span class="copy-icon">&#x2398;</span>
+        <span class="copied-feedback">Copied!</span>
+      </button>
+
+      <div class="terminal-window hero-gif">
+        <div class="terminal-titlebar">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+        </div>
+        <img src="gifs/edit.gif" alt="goenv terminal UI demo" width="1000" height="600">
+      </div>
+    </section>
+
+    <!-- ── Features ── -->
+    <section>
+      <h2 class="section-header">// Features</h2>
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <img src="gifs/edit.gif" alt="Edit with validation demo" loading="lazy" width="1000" height="600">
+          </div>
+          <div class="feature-info">
+            <h3 class="feature-title">Edit with validation</h3>
+            <p class="feature-desc">Edit variables with inline validation, autocomplete suggestions, and visual diff showing old vs new values.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <img src="gifs/search.gif" alt="Search and Filter demo" loading="lazy" width="1000" height="600">
+          </div>
+          <div class="feature-info">
+            <h3 class="feature-title">Search &amp; Filter</h3>
+            <p class="feature-desc">Search across key, value, and description. Filter by category to focus on what matters.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <img src="gifs/snapshots.gif" alt="Snapshots demo" loading="lazy" width="1000" height="600">
+          </div>
+          <div class="feature-info">
+            <h3 class="feature-title">Snapshots</h3>
+            <p class="feature-desc">Capture your environment state to JSON. Back up, share between machines, track changes over time.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <img src="gifs/presets.gif" alt="Presets demo" loading="lazy" width="1000" height="600">
+          </div>
+          <div class="feature-info">
+            <h3 class="feature-title">Presets</h3>
+            <p class="feature-desc">Named configurations for different workflows. Five built-in presets included. Switch contexts instantly.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <img src="gifs/themes.gif" alt="Themes demo" loading="lazy" width="1000" height="600">
+          </div>
+          <div class="feature-info">
+            <h3 class="feature-title">Themes</h3>
+            <p class="feature-desc">Four built-in color themes: default, nord, dracula, light. Press t to cycle.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <img src="gifs/undo-redo.gif" alt="Undo and Redo demo" loading="lazy" width="1000" height="600">
+          </div>
+          <div class="feature-info">
+            <h3 class="feature-title">Undo / Redo</h3>
+            <p class="feature-desc">Full undo/redo with persistent history across sessions. Never lose a change.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Install ── -->
+    <section class="install-section">
+      <h2 class="section-header">// Install</h2>
+
+      <div class="install-tabs">
+        <button class="install-tab active" data-tab="homebrew">[Homebrew]</button>
+        <button class="install-tab" data-tab="go">[Go]</button>
+        <button class="install-tab" data-tab="binary">[Binary]</button>
+      </div>
+
+      <div class="install-panel active" id="panel-homebrew">
+        <div class="install-command">
+          <code><span class="prompt">$ </span>brew install alexrios/tap/goenv</code>
+          <button class="copy-btn" onclick="copyCommand(this, 'brew install alexrios/tap/goenv')">
+            <span class="label">&#x2398;</span>
+            <span class="copied">Copied!</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="install-panel" id="panel-go">
+        <div class="install-command">
+          <code><span class="prompt">$ </span>go install github.com/alexrios/goenv/cmd/goenv@latest</code>
+          <button class="copy-btn" onclick="copyCommand(this, 'go install github.com/alexrios/goenv/cmd/goenv@latest')">
+            <span class="label">&#x2398;</span>
+            <span class="copied">Copied!</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="install-panel" id="panel-binary">
+        <div class="install-lines">
+          <div class="install-command">
+            <code><span class="comment"># Download from GitHub Releases</span></code>
+          </div>
+          <div class="install-command">
+            <code><span class="prompt">$ </span>open <a href="https://github.com/alexrios/goenv/releases" target="_blank" rel="noopener">github.com/alexrios/goenv/releases</a></code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/alexrios/goenv" target="_blank" rel="noopener">GitHub</a>
+        <span class="footer-sep">&middot;</span>
+        <span>GPL v3 License</span>
+        <span class="footer-sep">&middot;</span>
+        <span>Built with <a href="https://github.com/charmbracelet/bubbletea" target="_blank" rel="noopener">Bubble Tea</a></span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.install-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.install-tab').forEach(function(t) {
+          t.classList.remove('active');
+        });
+        document.querySelectorAll('.install-panel').forEach(function(p) {
+          p.classList.remove('active');
+        });
+        tab.classList.add('active');
+        document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Copy to clipboard with feedback
+    function copyCommand(el, text) {
+      navigator.clipboard.writeText(text).then(function() {
+        var label = el.querySelector('.label') || el.querySelector('.copy-icon');
+        var copied = el.querySelector('.copied') || el.querySelector('.copied-feedback');
+        if (label && copied) {
+          label.style.display = 'none';
+          copied.style.display = 'inline';
+          setTimeout(function() {
+            label.style.display = 'inline';
+            copied.style.display = 'none';
+          }, 1500);
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
