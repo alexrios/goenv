@@ -87,7 +87,10 @@ func TestGenerateShellExport_Bash(t *testing.T) {
 		{Key: "GOPROXY", Value: "https://proxy.golang.org,direct", Changed: false},
 	}
 
-	output := GenerateShellExport(vars, ShellBash, ExportAll)
+	output, err := GenerateShellExport(vars, ShellBash, ExportAll)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !strings.Contains(output, "export GOPATH=/home/user/go") {
 		t.Errorf("Expected GOPATH export in output, got:\n%s", output)
@@ -102,7 +105,10 @@ func TestGenerateShellExport_Fish(t *testing.T) {
 		{Key: "GOPATH", Value: "/home/user/go", Changed: true},
 	}
 
-	output := GenerateShellExport(vars, ShellFish, ExportAll)
+	output, err := GenerateShellExport(vars, ShellFish, ExportAll)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !strings.Contains(output, "set -x GOPATH /home/user/go") {
 		t.Errorf("Expected Fish set command in output, got:\n%s", output)
@@ -114,7 +120,10 @@ func TestGenerateShellExport_PowerShell(t *testing.T) {
 		{Key: "GOPATH", Value: "/home/user/go", Changed: true},
 	}
 
-	output := GenerateShellExport(vars, ShellPowerShell, ExportAll)
+	output, err := GenerateShellExport(vars, ShellPowerShell, ExportAll)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !strings.Contains(output, "$env:GOPATH = /home/user/go") {
 		t.Errorf("Expected PowerShell export in output, got:\n%s", output)
@@ -130,7 +139,10 @@ func TestGenerateShellExport_JSON(t *testing.T) {
 		{Key: "GOBIN", Value: "", Changed: true}, // Empty, should be skipped
 	}
 
-	output := GenerateShellExport(vars, ShellJSON, ExportAll)
+	output, err := GenerateShellExport(vars, ShellJSON, ExportAll)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !strings.Contains(output, `"GOPATH"`) {
 		t.Errorf("Expected GOPATH key in JSON output, got:\n%s", output)
@@ -149,7 +161,10 @@ func TestGenerateShellExport_ModifiedOnly(t *testing.T) {
 		{Key: "GOPROXY", Value: "https://proxy.golang.org", Changed: false},
 	}
 
-	output := GenerateShellExport(vars, ShellBash, ExportModified)
+	output, err := GenerateShellExport(vars, ShellBash, ExportModified)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !strings.Contains(output, "export GOPATH=") {
 		t.Errorf("Expected GOPATH (modified) in output, got:\n%s", output)
@@ -165,7 +180,10 @@ func TestGenerateShellExport_SkipsEmptyValues(t *testing.T) {
 		{Key: "GOBIN", Value: "", Changed: true},
 	}
 
-	output := GenerateShellExport(vars, ShellBash, ExportAll)
+	output, err := GenerateShellExport(vars, ShellBash, ExportAll)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !strings.Contains(output, "GOPATH") {
 		t.Errorf("Expected GOPATH in output, got:\n%s", output)

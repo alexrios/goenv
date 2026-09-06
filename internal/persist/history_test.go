@@ -4,12 +4,13 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/alexrios/goenv/internal/testutil"
 )
 
 func TestSaveAndLoadHistory(t *testing.T) {
 	// Use a temp dir to avoid polluting the real config
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	testutil.TempConfig(t)
 
 	history := SessionHistory{
 		Records: []EditRecord{
@@ -40,8 +41,7 @@ func TestSaveAndLoadHistory(t *testing.T) {
 }
 
 func TestLoadHistory_MissingFile(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	testutil.TempConfig(t)
 
 	history, err := LoadHistory()
 	if err != nil {
@@ -53,8 +53,7 @@ func TestLoadHistory_MissingFile(t *testing.T) {
 }
 
 func TestLoadHistory_CorruptedFile(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	tmpDir := testutil.TempConfig(t)
 
 	dir := filepath.Join(tmpDir, ConfigDirName)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -71,8 +70,7 @@ func TestLoadHistory_CorruptedFile(t *testing.T) {
 }
 
 func TestSaveHistory_TrimsToMaxEntries(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	testutil.TempConfig(t)
 
 	// Create history with 10 records
 	var records []EditRecord
@@ -108,8 +106,7 @@ func TestSaveHistory_TrimsToMaxEntries(t *testing.T) {
 }
 
 func TestSaveHistory_DefaultMaxOnZero(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	testutil.TempConfig(t)
 
 	history := SessionHistory{
 		Records:    make([]EditRecord, 60),
@@ -132,8 +129,7 @@ func TestSaveHistory_DefaultMaxOnZero(t *testing.T) {
 }
 
 func TestClearHistory(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	testutil.TempConfig(t)
 
 	history := SessionHistory{
 		Records:    []EditRecord{{Key: "GOPATH", OldValue: "a", NewValue: "b"}},
@@ -158,8 +154,7 @@ func TestClearHistory(t *testing.T) {
 }
 
 func TestLoadHistory_ValidatesIndices(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	testutil.TempConfig(t)
 
 	// Save with invalid currentIdx (too high)
 	history := SessionHistory{

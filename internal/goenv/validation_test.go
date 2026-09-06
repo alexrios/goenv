@@ -88,18 +88,19 @@ func TestValidateEnvValue_GO111MODULE(t *testing.T) {
 }
 
 func TestValidateEnvValue_Path(t *testing.T) {
+	absPath := t.TempDir()
 	tests := []struct {
 		key     string
 		value   string
 		wantErr bool
 	}{
-		{"GOPATH", "/home/user/go", false},
+		{"GOPATH", absPath, false},
 		{"GOPATH", "~/go", false},
 		{"GOPATH", "$HOME/go", false},
 		{"GOPATH", "relative/path", true},
-		{"GOROOT", "/usr/local/go", false},
-		{"GOBIN", "/home/user/go/bin", false},
-		{"GOCACHE", "/tmp/gocache", false},
+		{"GOROOT", absPath, false},
+		{"GOBIN", absPath, false},
+		{"GOCACHE", absPath, false},
 		{"GOPATH", "", false}, // empty is allowed
 	}
 

@@ -1,7 +1,8 @@
 package goenv
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"strings"
 )
@@ -81,7 +82,7 @@ func (f ExportFilter) Next() ExportFilter {
 }
 
 // GenerateShellExport generates shell export commands for the given variables.
-func GenerateShellExport(vars []EnvVar, shell ShellType, filter ExportFilter) string {
+func GenerateShellExport(vars []EnvVar, shell ShellType, filter ExportFilter) (string, error) {
 	// JSON format is special-cased
 	if shell == ShellJSON {
 		return generateJSONExport(vars, filter)
@@ -115,11 +116,11 @@ func GenerateShellExport(vars []EnvVar, shell ShellType, filter ExportFilter) st
 		lines = append(lines, formatExportLine(v.Key, v.Value, shell))
 	}
 
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n"), nil
 }
 
 // generateJSONExport produces a JSON object of variables.
-func generateJSONExport(vars []EnvVar, filter ExportFilter) string {
+func generateJSONExport(vars []EnvVar, filter ExportFilter) (string, error) {
 	m := make(map[string]string)
 	for _, v := range vars {
 		if filter == ExportModified && !v.Changed {
@@ -130,11 +131,11 @@ func generateJSONExport(vars []EnvVar, filter ExportFilter) string {
 		}
 		m[v.Key] = v.Value
 	}
-	data, err := json.MarshalIndent(m, "", "  ")
+	data, err := json.Marshal(m, jsontext.WithIndent("  "))
 	if err != nil {
-		return "{}"
+		return "", fmt.Errorf("failed to marshal JSON export: %w", err)
 	}
-	return string(data)
+	return string(data), nil
 }
 
 // formatExportLine formats a single export line for the given shell.

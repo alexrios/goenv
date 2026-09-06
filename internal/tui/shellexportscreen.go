@@ -27,6 +27,7 @@ type ShellExportScreenModel struct {
 	scrollOffset int
 	copied       bool
 	copyError    string
+	exportError  string
 	maxLines     int
 }
 
@@ -42,6 +43,7 @@ func NewShellExportScreenModel() ShellExportScreenModel {
 // SetItems sets the available items for export.
 func (m *ShellExportScreenModel) SetItems(items []goenv.EnvVar) {
 	m.items = items
+	m.exportError = ""
 	m.phase = shellExportPhaseOptions
 	m.scrollOffset = 0
 	m.copied = false
@@ -50,6 +52,7 @@ func (m *ShellExportScreenModel) SetItems(items []goenv.EnvVar) {
 // Init initializes the shell export screen.
 func (m *ShellExportScreenModel) Init() tea.Cmd {
 	m.phase = shellExportPhaseOptions
+	m.exportError = ""
 	m.copied = false
 	return nil
 }
@@ -81,7 +84,13 @@ func (m *ShellExportScreenModel) updateOptions(msg tea.KeyPressMsg) tea.Cmd {
 		m.filter = m.filter.Next()
 	case "enter", "p":
 		// Generate and show preview
-		output := goenv.GenerateShellExport(m.items, m.shell, m.filter)
+		output, err := goenv.GenerateShellExport(m.items, m.shell, m.filter)
+		if err != nil {
+			m.exportError = err.Error()
+			m.previewLines = nil
+			return nil
+		}
+		m.exportError = ""
 		m.previewLines = strings.Split(output, "\n")
 		m.scrollOffset = 0
 		m.phase = shellExportPhasePreview
@@ -147,6 +156,10 @@ func (m ShellExportScreenModel) viewOptions(b *strings.Builder) string {
 	b.WriteString(helpTitleStyle.Render("Shell Export") + "\n")
 	b.WriteString(suggestionHintStyle.Render("Step 1/2: Configure") + "\n\n")
 	b.WriteString("Generate shell commands to set Go environment variables.\n\n")
+
+	if m.exportError != "" {
+		b.WriteString(statusErrorStyle.Render(m.exportError) + "\n\n")
+	}
 
 	// Count exportable variables
 	count := goenv.CountExportableVars(m.items, m.filter)

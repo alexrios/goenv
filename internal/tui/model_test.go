@@ -11,13 +11,29 @@ import (
 
 	"github.com/alexrios/goenv/internal/goenv"
 	"github.com/alexrios/goenv/internal/persist"
+	"github.com/alexrios/goenv/internal/testutil"
 )
 
 // TestMain runs before all tests to ensure clean state.
 func TestMain(m *testing.M) {
-	// Clear any persisted history before running tests
-	_ = persist.ClearHistory()
-	os.Exit(m.Run())
+	dir, err := os.MkdirTemp("", "goenv-tui-test-*")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := os.Setenv(testutil.ConfigEnv(), dir); err != nil {
+		_ = os.RemoveAll(dir)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if _, err := testutil.ConfigDir(dir); err != nil {
+		_ = os.RemoveAll(dir)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	code := m.Run()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
 }
 
 // --- envItem Tests ---
@@ -232,10 +248,11 @@ func TestListScreen_RedoKey(t *testing.T) {
 // --- EditScreenModel Update Tests ---
 
 func TestEditScreen_EnterSaves(t *testing.T) {
+	newPath := t.TempDir()
 	m := NewEditScreenModel(goenv.GoVersion{})
 	m.editingKey = "GOPATH"
 	m.originalValue = "/old/path"
-	m.textInput.SetValue("/new/path")
+	m.textInput.SetValue(newPath)
 
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
 	cmd := m.Update(msg)
@@ -249,8 +266,8 @@ func TestEditScreen_EnterSaves(t *testing.T) {
 	if !ok {
 		t.Errorf("expected saveEnvRequestMsg, got %T", resultMsg)
 	}
-	if saveReq.Env.Key != "GOPATH" || saveReq.Env.Value != "/new/path" {
-		t.Errorf("saveEnvRequestMsg.Env = {%q, %q}, want {GOPATH, /new/path}", saveReq.Env.Key, saveReq.Env.Value)
+	if saveReq.Env.Key != "GOPATH" || saveReq.Env.Value != newPath {
+		t.Errorf("saveEnvRequestMsg.Env = {%q, %q}, want {GOPATH, %q}", saveReq.Env.Key, saveReq.Env.Value, newPath)
 	}
 	if saveReq.OriginalValue != "/old/path" {
 		t.Errorf("saveEnvRequestMsg.OriginalValue = %q, want /old/path", saveReq.OriginalValue)
@@ -305,9 +322,10 @@ func TestEditScreen_CtrlR_ResetsToOriginal(t *testing.T) {
 // --- Undo/Redo History Tests ---
 
 func TestUndoRedo_RecordsEdit(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/old"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// Process envSetSuccessMsg with a new value (simulating successful save)
 	msg := envSetSuccessMsg{
@@ -338,9 +356,10 @@ func TestUndoRedo_RecordsEdit(t *testing.T) {
 }
 
 func TestUndoRedo_NoRecordWhenValueUnchanged(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/same"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// Process envSetSuccessMsg with the same value
 	msg := envSetSuccessMsg{
@@ -419,9 +438,10 @@ func TestUndoRedo_RedoReapplies(t *testing.T) {
 }
 
 func TestUndoRedo_NothingToUndo(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// historyIdx is 0, no history
 	msg := undoMsg{}
@@ -434,9 +454,10 @@ func TestUndoRedo_NothingToUndo(t *testing.T) {
 }
 
 func TestUndoRedo_NothingToRedo(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// historyIdx equals history length, nothing to redo
 	msg := redoMsg{}
@@ -449,9 +470,10 @@ func TestUndoRedo_NothingToRedo(t *testing.T) {
 }
 
 func TestUndoRedo_BlockedWhileSaving(t *testing.T) {
-	_ = persist.ClearHistory()
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 	// Add a history entry so undo/redo would normally work
 	m.editHistory = []persist.EditRecord{{Key: "GOPATH", OldValue: "/old", NewValue: "/go"}}
 	m.historyIdx = 1
@@ -574,10 +596,11 @@ func TestMainModel_ShowHelp(t *testing.T) {
 // saveEnvRequestMsg (not envSetSuccessMsg), so the actual save is triggered.
 // This was a critical bug where edits appeared successful but weren't persisted.
 func TestRegression_EditScreenReturnsSaveRequest(t *testing.T) {
+	newPath := t.TempDir()
 	m := NewEditScreenModel(goenv.GoVersion{})
 	m.editingKey = "GOPATH"
 	m.originalValue = "/old"
-	m.textInput.SetValue("/new")
+	m.textInput.SetValue(newPath)
 
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
 	cmd := m.Update(msg)
@@ -603,9 +626,10 @@ func TestRegression_EditScreenReturnsSaveRequest(t *testing.T) {
 // TestRegression_HistoryRecordedOnlyAfterSaveSuccess verifies that history is
 // recorded only when save succeeds, not when the edit is initiated.
 func TestRegression_HistoryRecordedOnlyAfterSaveSuccess(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/old"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// saveEnvRequestMsg should NOT record history (save hasn't completed yet)
 	saveReq := saveEnvRequestMsg{
@@ -682,13 +706,17 @@ func TestRegression_UpdateItemByKeyReturnsBoolean(t *testing.T) {
 // TestRegression_SaveEnvRequestIncludesOriginalValue verifies that saveEnvRequestMsg
 // includes the original value, which is needed for proper history recording.
 func TestRegression_SaveEnvRequestIncludesOriginalValue(t *testing.T) {
+	newPath := t.TempDir()
 	m := NewEditScreenModel(goenv.GoVersion{})
 	m.editingKey = "GOPATH"
 	m.originalValue = "/original/path"
-	m.textInput.SetValue("/new/path")
+	m.textInput.SetValue(newPath)
 
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
 	cmd := m.Update(msg)
+	if cmd == nil {
+		t.Fatal("expected save command, got nil")
+	}
 	resultMsg := cmd()
 
 	saveReq, ok := resultMsg.(saveEnvRequestMsg)
@@ -945,12 +973,13 @@ func TestRegression_KeyPressMsg_DelegatedToListScreen(t *testing.T) {
 // TestRegression_KeyPressMsg_DelegatedToEditScreen verifies that KeyPressMsg
 // is properly delegated to the EditScreen when on the edit screen.
 func TestRegression_KeyPressMsg_DelegatedToEditScreen(t *testing.T) {
+	newPath := t.TempDir()
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
 	m.currentScreen = AppScreenEdit
 	m.editScreen.editingKey = "GOPATH"
 	m.editScreen.originalValue = "/go"
-	m.editScreen.textInput.SetValue("/new/path")
+	m.editScreen.textInput.SetValue(newPath)
 
 	// Press Enter which should trigger saveEnvRequestMsg
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
@@ -1103,5 +1132,31 @@ func TestMainModel_ConfigApplied(t *testing.T) {
 
 	if m.sortMode != persist.SortAlpha {
 		t.Errorf("NewMainModel with alpha config: sortMode = %v, want SortAlpha", m.sortMode)
+	}
+}
+
+func TestExportFailureClearsProgressMessage(t *testing.T) {
+	m := NewMainModel(nil, nil, persist.DefaultConfig())
+	m.currentScreen = AppScreenExport
+	model, _ := m.Update(exportSnapshotMsg{Name: "snapshot"})
+	m = model.(mainModel)
+	if m.successMessage != "Exporting..." {
+		t.Fatal("export did not enter progress state")
+	}
+
+	model, cmd := m.Update(exportErrorMsg{Err: fmt.Errorf("permission denied")})
+	m = model.(mainModel)
+	if m.isSaving || m.spinnerActive {
+		t.Error("export progress remains active after failure")
+	}
+	if m.successMessage != "" {
+		t.Errorf("stale progress message after failure: %q", m.successMessage)
+	}
+	if m.currentScreen != AppScreenExport || cmd == nil {
+		t.Error("failure should retain export screen and schedule error dismissal")
+	}
+	view := m.View().Content
+	if !strings.Contains(view, "Export failed: permission denied") || strings.Contains(view, "Exporting...") {
+		t.Errorf("failure view must show the error without stale progress: %s", view)
 	}
 }

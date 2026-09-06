@@ -1,7 +1,8 @@
 package persist
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"os"
 	"path/filepath"
@@ -77,8 +78,8 @@ type Config struct {
 	SortMode      string   `json:"sortMode"`
 	Theme         string   `json:"theme,omitempty"`
 	Favorites     []string `json:"favorites,omitzero"`
-	WatchInterval int      `json:"watchInterval,omitempty"`
-	MaxHistory    int      `json:"maxHistory,omitempty"`
+	WatchInterval int      `json:"watchInterval,omitzero"`
+	MaxHistory    int      `json:"maxHistory,omitzero"`
 }
 
 // ThemeDefault is the default theme name.
@@ -139,7 +140,7 @@ func SaveConfig(cfg Config) error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := json.Marshal(cfg, jsontext.WithIndent("  "))
 	if err != nil {
 		return err
 	}

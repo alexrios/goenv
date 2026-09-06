@@ -1,7 +1,8 @@
 package persist
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"os"
@@ -45,7 +46,7 @@ func ExportSnapshot(snapshot Snapshot, filePath string) error {
 		}
 	}
 
-	data, err := json.MarshalIndent(snapshot, "", "  ")
+	data, err := json.Marshal(snapshot, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("failed to marshal snapshot: %w", err)
 	}

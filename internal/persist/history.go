@@ -1,7 +1,8 @@
 package persist
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"os"
 	"path/filepath"
@@ -95,7 +96,7 @@ func SaveHistory(history SessionHistory, maxEntries int) error {
 		}
 	}
 
-	data, err := json.MarshalIndent(history, "", "  ")
+	data, err := json.Marshal(history, jsontext.WithIndent("  "))
 	if err != nil {
 		return err
 	}
