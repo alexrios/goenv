@@ -248,10 +248,11 @@ func TestListScreen_RedoKey(t *testing.T) {
 // --- EditScreenModel Update Tests ---
 
 func TestEditScreen_EnterSaves(t *testing.T) {
+	newPath := t.TempDir()
 	m := NewEditScreenModel(goenv.GoVersion{})
 	m.editingKey = "GOPATH"
 	m.originalValue = "/old/path"
-	m.textInput.SetValue("/new/path")
+	m.textInput.SetValue(newPath)
 
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
 	cmd := m.Update(msg)
@@ -265,8 +266,8 @@ func TestEditScreen_EnterSaves(t *testing.T) {
 	if !ok {
 		t.Errorf("expected saveEnvRequestMsg, got %T", resultMsg)
 	}
-	if saveReq.Env.Key != "GOPATH" || saveReq.Env.Value != "/new/path" {
-		t.Errorf("saveEnvRequestMsg.Env = {%q, %q}, want {GOPATH, /new/path}", saveReq.Env.Key, saveReq.Env.Value)
+	if saveReq.Env.Key != "GOPATH" || saveReq.Env.Value != newPath {
+		t.Errorf("saveEnvRequestMsg.Env = {%q, %q}, want {GOPATH, %q}", saveReq.Env.Key, saveReq.Env.Value, newPath)
 	}
 	if saveReq.OriginalValue != "/old/path" {
 		t.Errorf("saveEnvRequestMsg.OriginalValue = %q, want /old/path", saveReq.OriginalValue)
@@ -595,10 +596,11 @@ func TestMainModel_ShowHelp(t *testing.T) {
 // saveEnvRequestMsg (not envSetSuccessMsg), so the actual save is triggered.
 // This was a critical bug where edits appeared successful but weren't persisted.
 func TestRegression_EditScreenReturnsSaveRequest(t *testing.T) {
+	newPath := t.TempDir()
 	m := NewEditScreenModel(goenv.GoVersion{})
 	m.editingKey = "GOPATH"
 	m.originalValue = "/old"
-	m.textInput.SetValue("/new")
+	m.textInput.SetValue(newPath)
 
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
 	cmd := m.Update(msg)
@@ -704,13 +706,17 @@ func TestRegression_UpdateItemByKeyReturnsBoolean(t *testing.T) {
 // TestRegression_SaveEnvRequestIncludesOriginalValue verifies that saveEnvRequestMsg
 // includes the original value, which is needed for proper history recording.
 func TestRegression_SaveEnvRequestIncludesOriginalValue(t *testing.T) {
+	newPath := t.TempDir()
 	m := NewEditScreenModel(goenv.GoVersion{})
 	m.editingKey = "GOPATH"
 	m.originalValue = "/original/path"
-	m.textInput.SetValue("/new/path")
+	m.textInput.SetValue(newPath)
 
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
 	cmd := m.Update(msg)
+	if cmd == nil {
+		t.Fatal("expected save command, got nil")
+	}
 	resultMsg := cmd()
 
 	saveReq, ok := resultMsg.(saveEnvRequestMsg)
@@ -967,12 +973,13 @@ func TestRegression_KeyPressMsg_DelegatedToListScreen(t *testing.T) {
 // TestRegression_KeyPressMsg_DelegatedToEditScreen verifies that KeyPressMsg
 // is properly delegated to the EditScreen when on the edit screen.
 func TestRegression_KeyPressMsg_DelegatedToEditScreen(t *testing.T) {
+	newPath := t.TempDir()
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
 	m.currentScreen = AppScreenEdit
 	m.editScreen.editingKey = "GOPATH"
 	m.editScreen.originalValue = "/go"
-	m.editScreen.textInput.SetValue("/new/path")
+	m.editScreen.textInput.SetValue(newPath)
 
 	// Press Enter which should trigger saveEnvRequestMsg
 	msg := tea.KeyPressMsg{Code: tea.KeyEnter}
