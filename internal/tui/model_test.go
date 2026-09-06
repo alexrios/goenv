@@ -15,9 +15,19 @@ import (
 
 // TestMain runs before all tests to ensure clean state.
 func TestMain(m *testing.M) {
-	// Clear any persisted history before running tests
-	_ = persist.ClearHistory()
-	os.Exit(m.Run())
+	dir, err := os.MkdirTemp("", "goenv-tui-test-*")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := os.Setenv("XDG_CONFIG_HOME", dir); err != nil {
+		_ = os.RemoveAll(dir)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	code := m.Run()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
 }
 
 // --- envItem Tests ---
@@ -305,9 +315,10 @@ func TestEditScreen_CtrlR_ResetsToOriginal(t *testing.T) {
 // --- Undo/Redo History Tests ---
 
 func TestUndoRedo_RecordsEdit(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/old"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// Process envSetSuccessMsg with a new value (simulating successful save)
 	msg := envSetSuccessMsg{
@@ -338,9 +349,10 @@ func TestUndoRedo_RecordsEdit(t *testing.T) {
 }
 
 func TestUndoRedo_NoRecordWhenValueUnchanged(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/same"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// Process envSetSuccessMsg with the same value
 	msg := envSetSuccessMsg{
@@ -419,9 +431,10 @@ func TestUndoRedo_RedoReapplies(t *testing.T) {
 }
 
 func TestUndoRedo_NothingToUndo(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// historyIdx is 0, no history
 	msg := undoMsg{}
@@ -434,9 +447,10 @@ func TestUndoRedo_NothingToUndo(t *testing.T) {
 }
 
 func TestUndoRedo_NothingToRedo(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// historyIdx equals history length, nothing to redo
 	msg := redoMsg{}
@@ -449,9 +463,10 @@ func TestUndoRedo_NothingToRedo(t *testing.T) {
 }
 
 func TestUndoRedo_BlockedWhileSaving(t *testing.T) {
-	_ = persist.ClearHistory()
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/go"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 	// Add a history entry so undo/redo would normally work
 	m.editHistory = []persist.EditRecord{{Key: "GOPATH", OldValue: "/old", NewValue: "/go"}}
 	m.historyIdx = 1
@@ -603,9 +618,10 @@ func TestRegression_EditScreenReturnsSaveRequest(t *testing.T) {
 // TestRegression_HistoryRecordedOnlyAfterSaveSuccess verifies that history is
 // recorded only when save succeeds, not when the edit is initiated.
 func TestRegression_HistoryRecordedOnlyAfterSaveSuccess(t *testing.T) {
-	_ = persist.ClearHistory() // Ensure clean state
 	items := []goenv.EnvVar{{Key: "GOPATH", Value: "/old"}}
 	m := NewMainModel(items, nil, persist.DefaultConfig())
+	m.editHistory = nil
+	m.historyIdx = 0
 
 	// saveEnvRequestMsg should NOT record history (save hasn't completed yet)
 	saveReq := saveEnvRequestMsg{

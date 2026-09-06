@@ -256,7 +256,7 @@ var EnvVarKnownValues = map[string][]string{
 	"GORISCV64":    {"rva20u64", "rva22u64"},
 	"GOWASM":       {"satconv", "signext"},
 	"GOTOOLCHAIN":  {"auto", "local", "path"},
-	"GOEXPERIMENT": {"arenas", "boringcrypto", "cacheprog", "newinliner", "rangefunc"},
+	"GOEXPERIMENT": {"arenas", "boringcrypto", "cacheprog", "jsonv2", "nojsonv2", "newinliner", "rangefunc", "simd"},
 }
 
 // GetEnvVarKnownValues returns the list of known values for a given environment variable.
@@ -265,10 +265,11 @@ func GetEnvVarKnownValues(key string) []string {
 	return EnvVarKnownValues[key]
 }
 
-// versionedValue represents a known value that requires a minimum Go version.
+// versionedValue represents a known value that has a Go version availability range.
 type versionedValue struct {
 	Value      string
 	MinVersion GoVersion
+	MaxVersion GoVersion // Exclusive; zero means no upper limit.
 }
 
 // versionGatedValues maps env var keys to values that require specific Go versions.
@@ -281,8 +282,11 @@ var versionGatedValues = map[string][]versionedValue{
 		{Value: "loong64", MinVersion: MinVersionLoong64},
 	},
 	"GOEXPERIMENT": {
-		{Value: "rangefunc", MinVersion: MinVersionRangefunc},
-		{Value: "cacheprog", MinVersion: MinVersionCacheprog},
+		{Value: "rangefunc", MinVersion: MinVersionRangefunc, MaxVersion: GoVersion{1, 26, 0}},
+		{Value: "jsonv2", MinVersion: GoVersion{1, 25, 0}},
+		{Value: "nojsonv2", MinVersion: GoVersion{1, 25, 0}},
+		{Value: "simd", MinVersion: GoVersion{1, 26, 0}},
+		{Value: "cacheprog", MinVersion: MinVersionCacheprog, MaxVersion: GoVersion{1, 26, 0}},
 	},
 }
 
@@ -294,7 +298,7 @@ var wholeVarMinVersions = map[string]GoVersion{
 }
 
 // FilterKnownValuesForVersion returns known values for key, excluding those
-// that require a newer Go version than ver. If ver is zero, returns all values.
+// unavailable in ver. If ver is zero, returns all values.
 func FilterKnownValuesForVersion(key string, ver GoVersion) []string {
 	values := GetEnvVarKnownValues(key)
 	if values == nil {
@@ -320,7 +324,7 @@ func FilterKnownValuesForVersion(key string, ver GoVersion) []string {
 	for _, v := range values {
 		include := true
 		for _, gv := range gated {
-			if gv.Value == v && !ver.AtLeast(gv.MinVersion) {
+			if gv.Value == v && (!ver.AtLeast(gv.MinVersion) || (!gv.MaxVersion.IsZero() && ver.AtLeast(gv.MaxVersion))) {
 				include = false
 				break
 			}
@@ -386,7 +390,7 @@ var envVarExtendedDocs = map[string]string{
 	"GOPROXY":      "Comma-separated list of proxy URLs. Use 'direct' to skip. Default: https://proxy.golang.org,direct",
 	"GOPRIVATE":    "Comma-separated glob patterns (e.g. github.com/myorg/*). Also sets GONOPROXY and GONOSUMDB.",
 	"GODEBUG":      "Comma-separated key=value pairs. Examples: gctrace=1, schedtrace=1000, http2debug=1",
-	"GOEXPERIMENT": "Comma-separated experiment names. Prefix with 'no' to disable (e.g. norangefunc).",
+	"GOEXPERIMENT": "Comma-separated experiment names. Prefix with 'no' to disable (e.g. nojsonv2).",
 	"GOFLAGS":      "Space-separated flags applied to every go command. Example: -mod=vendor -count=1",
 	"GOTOOLCHAIN":  "Controls toolchain selection. 'auto' downloads as needed. 'local' uses only installed version.",
 	"CGO_ENABLED":  "Set to 0 for static builds without C dependencies. Set to 1 to enable CGO linking.",

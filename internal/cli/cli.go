@@ -164,7 +164,15 @@ func runCLIExport(opts Options) bool {
 		os.Exit(1)
 	}
 
-	output := goenv.GenerateShellExport(items, shell, filter)
+	return printCLIExport(items, shell, filter)
+}
+
+func printCLIExport(items []goenv.EnvVar, shell goenv.ShellType, filter goenv.ExportFilter) bool {
+	output, err := goenv.GenerateShellExport(items, shell, filter)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println(output)
 	return true
 }
