@@ -1121,3 +1121,29 @@ func TestMainModel_ConfigApplied(t *testing.T) {
 		t.Errorf("NewMainModel with alpha config: sortMode = %v, want SortAlpha", m.sortMode)
 	}
 }
+
+func TestExportFailureClearsProgressMessage(t *testing.T) {
+	m := NewMainModel(nil, nil, persist.DefaultConfig())
+	m.currentScreen = AppScreenExport
+	model, _ := m.Update(exportSnapshotMsg{Name: "snapshot"})
+	m = model.(mainModel)
+	if m.successMessage != "Exporting..." {
+		t.Fatal("export did not enter progress state")
+	}
+
+	model, cmd := m.Update(exportErrorMsg{Err: fmt.Errorf("permission denied")})
+	m = model.(mainModel)
+	if m.isSaving || m.spinnerActive {
+		t.Error("export progress remains active after failure")
+	}
+	if m.successMessage != "" {
+		t.Errorf("stale progress message after failure: %q", m.successMessage)
+	}
+	if m.currentScreen != AppScreenExport || cmd == nil {
+		t.Error("failure should retain export screen and schedule error dismissal")
+	}
+	view := m.View().Content
+	if !strings.Contains(view, "Export failed: permission denied") || strings.Contains(view, "Exporting...") {
+		t.Errorf("failure view must show the error without stale progress: %s", view)
+	}
+}

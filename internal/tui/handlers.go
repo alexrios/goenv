@@ -394,6 +394,7 @@ func (m mainModel) handleExportSuccess(msg exportSuccessMsg) (mainModel, tea.Cmd
 
 // handleExportError handles failed snapshot export.
 func (m mainModel) handleExportError(msg exportErrorMsg) (mainModel, tea.Cmd) {
+	m.clearTempMessages()
 	m.isSaving = false
 	m.spinnerActive = false
 	m.saveError = fmt.Sprintf("Export failed: %v", msg.Err)
