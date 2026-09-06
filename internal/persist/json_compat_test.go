@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/alexrios/goenv/internal/testutil"
 )
 
 func TestJSONCompatibility(t *testing.T) {
@@ -27,11 +29,7 @@ func TestJSONCompatibility(t *testing.T) {
 			func(path string) (any, error) { return ImportSnapshot(path) }, Snapshot{Name: "old"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-			dir, err := os.UserConfigDir()
-			if err != nil {
-				t.Fatal(err)
-			}
+			dir := testutil.TempConfig(t)
 			dir = filepath.Join(dir, ConfigDirName)
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				t.Fatal(err)
@@ -114,7 +112,7 @@ func TestJSONCompatibility(t *testing.T) {
 }
 
 func TestConfigJSONOmission(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.TempConfig(t)
 	for _, favorites := range [][]string{nil, {}, {"GOPATH"}} {
 		cfg := Config{SortMode: "alpha", Favorites: favorites}
 		if err := SaveConfig(cfg); err != nil {
@@ -149,7 +147,7 @@ func TestConfigJSONOmission(t *testing.T) {
 }
 
 func TestSerializationFailurePreservesFiles(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.TempConfig(t)
 	cfgPath, err := configPath()
 	if err != nil {
 		t.Fatal(err)
@@ -193,7 +191,7 @@ func TestSerializationFailurePreservesFiles(t *testing.T) {
 }
 
 func TestLegacyPreset(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	testutil.TempConfig(t)
 	dir, err := PresetsDir()
 	if err != nil {
 		t.Fatal(err)

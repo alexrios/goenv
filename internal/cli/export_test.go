@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/alexrios/goenv/internal/goenv"
+	"github.com/alexrios/goenv/internal/testutil"
 )
 
 func TestCLIExportSerializationError(t *testing.T) {
@@ -15,8 +16,9 @@ func TestCLIExportSerializationError(t *testing.T) {
 		printCLIExport([]goenv.EnvVar{{Key: "GOPATH", Value: "\xff"}}, goenv.ShellJSON, goenv.ExportAll)
 		return
 	}
+	testutil.TempConfig(t)
 	cmd := exec.Command(os.Args[0], "-test.run=^TestCLIExportSerializationError$")
-	cmd.Env = append(os.Environ(), "GOENV_TEST_INVALID_EXPORT=1", "XDG_CONFIG_HOME="+t.TempDir())
+	cmd.Env = append(os.Environ(), "GOENV_TEST_INVALID_EXPORT=1")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

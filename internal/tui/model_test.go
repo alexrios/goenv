@@ -11,6 +11,7 @@ import (
 
 	"github.com/alexrios/goenv/internal/goenv"
 	"github.com/alexrios/goenv/internal/persist"
+	"github.com/alexrios/goenv/internal/testutil"
 )
 
 // TestMain runs before all tests to ensure clean state.
@@ -20,7 +21,12 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if err := os.Setenv("XDG_CONFIG_HOME", dir); err != nil {
+	if err := os.Setenv(testutil.ConfigEnv(), dir); err != nil {
+		_ = os.RemoveAll(dir)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if _, err := testutil.ConfigDir(dir); err != nil {
 		_ = os.RemoveAll(dir)
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
